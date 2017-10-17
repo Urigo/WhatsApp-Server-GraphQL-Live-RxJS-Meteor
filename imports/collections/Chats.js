@@ -1,10 +1,14 @@
 import SimpleSchema from 'simpl-schema';
 
+import { withFilter } from 'graphql-subscriptions';
+
 import { Collection } from '/imports/collections/Collection';
 import { Members } from '/imports/collections/Members';
 import { Messages } from '/imports/collections/Messages';
 import { memberFilter } from '/imports/filters/member';
 import { chatFilter } from '/imports/filters/chat';
+import { subscriptionFilter } from '/imports/filters/subscriptions';
+import { pubsub, topics } from '/imports/graphql/subscriptions';
 
 export const Chats = new Collection('chats');
 
@@ -22,29 +26,85 @@ export const ChatsSchema = new SimpleSchema({
 
 Chats.helpers({
   getMembers({filter}) {
-    const query = memberFilter(filter);
+    let selector = memberFilter({}, filter);
+
+    selector = {
+      ...selector,
+      _id: {
+        ...selector._id,
+        $in: this.members
+      }
+    };
     
-    return Members.find(query).fetch();
+    return Members.find(selector).fetch();
   },
   getMessages({last}) {
+    const selector = {
+      chat: this._id
+    };
+    const options = {};
+    
     if (last) {
-      return Messages.find({}, { max: last }).sort({createdAt: -1}).fetch();
+      options.limit = last;
+      options.sort = {
+        createdAt: -1
+      };
     }
 
-    return Messages.find({}).fetch();
+    return Messages.find(selector, options).fetch();
   }
 });
 
+Chats.create = ({membersIds}) => {
+  const id = Chats.insert({
+    members: membersIds
+  });
+
+  const record = Chats.findOne({_id: id});
+
+  pubsub.publish(topics.CHAT, {
+    Chat: {
+      in_mutation: 'CREATED',
+      node: record
+    }
+  });
+
+  return record;
+};
+
+Chats.delete = ({id}) => {
+  const chat = Chats.findOne({_id: id});
+
+  Chats.remove({_id: id});
+
+  pubsub.publish(topics.CHAT, {
+    Chat: {
+      in_mutation: 'DELETED',
+      previousValues: chat
+    }
+  });
+
+  return chat;
+};
+
 Chats.all = ({filter}) => {
-  const query = chatFilter(filter);
+  const selector = chatFilter({}, filter);
 
-  return Chats.find(query).fetch();
+  return Chats.find(selector).fetch();
 };
 
-Chats.single = ({filter}) => {
-  const query = chatFilter(filter);
+Chats.single = ({filter, id}) => {
+  const selector = chatFilter({}, filter);
   
-  return Chats.findOne(query);
+  if (id) {
+    selector._id = id;
+  }
+  
+  return Chats.findOne(selector);
 };
+
+Chats.subscribtion = () => withFilter(() => pubsub.asyncIterator(topics.CHAT), (payload, args) => {
+  return subscriptionFilter(payload, args);
+});
 
 Chats.attachSchema(ChatsSchema);

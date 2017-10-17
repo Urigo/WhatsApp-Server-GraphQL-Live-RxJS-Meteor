@@ -24,30 +24,32 @@ export const MembersSchema = new SimpleSchema({
 Members.helpers({
   getMessages() {
     return Messages.find({
-      members: this._id,
+      author: this._id,
     }).fetch();
   },
   getChats({filter, first}) {
-    const query = chatFilter(filter);
-    const modifiers = {};
+    const selector = chatFilter({
+      members: this._id
+    }, filter);
+    const options = {};
 
     if (first) {
-      modifiers.max = first;
+      options.limit = first;
     }
 
-    return Chats.find(query, modifiers).fetch();
+    return Chats.find(selector, options).fetch();
   },
 });
 
 Members.all = ({filter, first}) => {
-  const query = memberFilter(filter);
-  const modifiers = {};
+  const selector = memberFilter({}, filter);
+  const options = {};
 
   if (first) {
-    modifiers.max = first;
+    options.limit = first;
   }
 
-  return Members.find(query, modifiers).fetch();
+  return Members.find(selector, options).fetch();
 };
 
 Members.attachSchema(MembersSchema);

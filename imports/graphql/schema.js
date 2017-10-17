@@ -113,10 +113,10 @@ export default `
   # Root types
 
   type Query {
-    allChats(filter: ChatFilter): [Chat]
+    allChats(filter: ChatFilter, orderBy: OrderBy): [Chat]
     allMessages(filter: MessageFilter): [Message]
     allMembers(filter: MemberFilter, first: Int): [Member]
-    Chat(filter: ChatFilter): Chat
+    Chat(filter: ChatFilter, id: ID): Chat
   }
 
   type Mutation {

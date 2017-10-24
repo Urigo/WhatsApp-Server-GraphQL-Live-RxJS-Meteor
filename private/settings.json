@@ -1,0 +1,6 @@
+{
+  "meteor-graphql-rxjs": {
+    "graphqlEndpoint": "/graphql_live",
+    "graphiqlEndpoint": "/graphiql_live"
+  }
+}

@@ -1,29 +1,18 @@
 import { makeExecutableSchema } from 'graphql-tools';
-
-const schema = makeExecutableSchema({
-    typeDefs: `
-  type Message {
-    content: String
-  }
-  
-  type Query {
-    allMessages: [Message]
-  }
-  `,
-    resolvers: {
-        Query: {
-            allMessages: (root, args, ctx) => {
-                return [{content: "1"}, {content: "2"}, {content: "3"}];
-            },
-        },
-    },
-});
-
 import { runGraphQLServer } from 'meteor-graphql-rxjs';
+
+import schema from '../imports/graphql/schema';
+import resolvers from '../imports/graphql/resolvers';
+
+const executableSchema = makeExecutableSchema({
+    typeDefs: [schema],
+    resolvers: resolvers
+});
 
 Meteor.startup(() => {
     const sub = runGraphQLServer(Npm.require, {
-        schema,
+        schema: executableSchema,
+        graphiql: true,
         createContext: (payload) => ({
 
         }),

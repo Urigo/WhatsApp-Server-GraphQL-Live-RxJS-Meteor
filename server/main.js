@@ -39,6 +39,9 @@ function startSubscriptionServer() {
 	{
 		port: subscriptionPort,
 		host: '0.0.0.0'
+	},
+	{
+		noServer: true,
 	});
 
 	console.log('GraphQL Subscription server runs on port:', subscriptionPort);

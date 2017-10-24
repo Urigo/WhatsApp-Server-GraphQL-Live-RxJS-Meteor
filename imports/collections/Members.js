@@ -6,7 +6,10 @@ import { Chats } from '/imports/collections/Chats';
 import { chatFilter } from '/imports/filters/chat';
 import { memberFilter } from '/imports/filters/member';
 
+import { MongoObservable } from 'meteor-rxjs';
+
 export const Members = new Collection('members');
+export const MembersReactive = MongoObservable.fromExisting(Members);
 
 export const MembersSchema = new SimpleSchema({
   createdAt: {
@@ -50,6 +53,17 @@ Members.all = ({filter, first}) => {
   }
 
   return Members.find(selector, options).fetch();
+};
+
+MembersReactive.all = ({filter, first}) => {
+    const selector = memberFilter({}, filter);
+    const options = {};
+
+    if (first) {
+        options.limit = first;
+    }
+
+    return MembersReactive.find(selector, options);
 };
 
 Members.attachSchema(MembersSchema);

@@ -9,7 +9,10 @@ import { messageFilter } from '/imports/filters/message';
 import { subscriptionFilter } from '/imports/filters/subscriptions';
 import { pubsub, topics } from '/imports/graphql/subscriptions';
 
+import { MongoObservable } from 'meteor-rxjs';
+
 export const Messages = new Collection('messages');
+export const MessagesReactive = MongoObservable.fromExisting(Messages);
 
 export const MessagesSchema = new SimpleSchema({
   createdAt: {
@@ -64,6 +67,12 @@ Messages.all = ({filter}) => {
   const selector = messageFilter({}, filter);
 
   return Messages.find(selector).fetch();
+};
+
+MessagesReactive.all = ({filter}) => {
+    const selector = messageFilter({}, filter);
+
+    return MessagesReactive.find(selector);
 };
 
 Messages.subscribtion = () => withFilter(() => pubsub.asyncIterator(topics.MESSAGE), (payload, args) => {

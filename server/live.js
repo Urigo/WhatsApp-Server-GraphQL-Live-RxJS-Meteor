@@ -2,54 +2,42 @@ import { makeExecutableSchema } from 'graphql-tools';
 import { MongoObservable } from 'meteor-rxjs';
 import { runGraphQLServer } from 'meteor-graphql-rxjs';
 
-const Messages = new MongoObservable.Collection('my-messages');
+import schema from '../imports/graphql/schema';
+import resolvers from '../imports/graphql/resolvers/live';
 
-Messages.remove({});
-
-Messages.insert({content: "1"});
-Messages.insert({content: "2"});
-Messages.insert({content: "3"});
+import { ChatsReactive } from '../imports/collections/Chats';
+import { MessagesReactive } from '../imports/collections/Messages';
+import { MembersReactive } from '../imports/collections/Members';
 
 for (let i = 1; i <= 1000; i++) {
     Meteor.setTimeout(() => {
-        Messages.insert({content: i+3});
-    }, i * 5000);
+        MembersReactive.insert({name: `Niccolo' Belli entry #${i}`});
+        console.log(`Inserted Niccolo' Belli entry #${i}`);
+        }, i * 5000);
 }
 
-const schema = makeExecutableSchema({
-    typeDefs: `
-  type Message {
-    content: String
-  }
-
-  type Query {
-    allMessages: [Message]
-  }
-  `,
-    resolvers: {
-        Query: {
-            allMessages: (root, args, ctx) => {
-                return ctx.Messages.find();
-            },
-        },
-    },
+const executableSchema = makeExecutableSchema({
+    typeDefs: [schema],
+    resolvers
 });
 
 const defaultQuery = `
-  query {
-    allMessages @live {
-      content
-    }
-  }
+query {
+  allMembers @live {
+     name
+   }
+ }
 `;
 
 Meteor.startup(() => {
     const sub = runGraphQLServer(Npm.require, {
-        schema,
+        schema: executableSchema,
         graphiql: true,
         graphiqlQuery: defaultQuery,
         createContext: (payload) => ({
-            Messages
+            ChatsReactive,
+            MessagesReactive,
+            MembersReactive
         }),
     })
         .subscribe(undefined, (error) => {

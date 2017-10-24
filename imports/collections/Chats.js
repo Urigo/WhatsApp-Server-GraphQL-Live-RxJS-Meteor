@@ -10,7 +10,10 @@ import { chatFilter } from '/imports/filters/chat';
 import { subscriptionFilter } from '/imports/filters/subscriptions';
 import { pubsub, topics } from '/imports/graphql/subscriptions';
 
+import { MongoObservable } from 'meteor-rxjs';
+
 export const Chats = new Collection('chats');
+export const ChatsReactive = MongoObservable.fromExisting(Chats);
 
 export const ChatsSchema = new SimpleSchema({
   createdAt: {
@@ -93,6 +96,12 @@ Chats.all = ({filter}) => {
   return Chats.find(selector).fetch();
 };
 
+ChatsReactive.all = ({filter}) => {
+    const selector = chatFilter({}, filter);
+
+    return ChatsReactive.find(selector);
+};
+
 Chats.single = ({filter, id}) => {
   const selector = chatFilter({}, filter);
   
@@ -101,6 +110,16 @@ Chats.single = ({filter, id}) => {
   }
   
   return Chats.findOne(selector);
+};
+
+ChatsReactive.single = ({filter, id}) => {
+    const selector = chatFilter({}, filter);
+
+    if (id) {
+        selector._id = id;
+    }
+
+    return ChatsReactive.findOne(selector);
 };
 
 Chats.subscribtion = () => withFilter(() => pubsub.asyncIterator(topics.CHAT), (payload, args) => {
